@@ -5,6 +5,7 @@ import "react-pdf/dist/esm/Page/TextLayer.css";
 
 interface PdfPreviewProps {
   file: string;
+  name: string;
 }
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -17,7 +18,7 @@ const options = {
   standardFontDataUrl: "/standard_fonts/",
 };
 
-export default function PdfPreview({ file }: PdfPreviewProps) {
+export default function PdfPreview({ file, name }: PdfPreviewProps) {
   const [numPages, setNumPages] = useState(0);
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
@@ -25,14 +26,20 @@ export default function PdfPreview({ file }: PdfPreviewProps) {
   }
 
   return (
-    <div>
-      <Document
-        file={file}
-        options={options}
-        onLoadSuccess={onDocumentLoadSuccess}
-      >
-        {numPages > 0 && <Page pageNumber={1} width={150} />}
-      </Document>
+    <div className="pt-8 pb-4 rounded-md shadow bg-white">
+      <div className="mb-3 px-8">
+        <Document
+          file={file}
+          options={options}
+          onLoadSuccess={onDocumentLoadSuccess}
+          className="border border-gray-300"
+        >
+          {numPages > 0 && <Page pageNumber={1} width={125} />}
+        </Document>
+      </div>
+      <div className="w-48 px-4 text-sm text-center truncate" title={name}>
+        {name}
+      </div>
     </div>
   );
 }

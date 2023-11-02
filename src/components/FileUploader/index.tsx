@@ -38,6 +38,7 @@ export default function FileUploader({
       <input
         id="fileInput"
         type="file"
+        accept=".pdf"
         multiple={isMultiple}
         onChange={handleInputFileChange}
         className="hidden"

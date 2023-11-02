@@ -4,12 +4,14 @@ import {
   DropResult,
   Droppable,
 } from "@hello-pangea/dnd";
+import clsx from "clsx";
 import { PDFDocument } from "pdf-lib";
 import { useState } from "react";
+import { HiOutlinePlusCircle, HiOutlineTrash } from "react-icons/hi2";
 import { Link } from "react-router-dom";
 import { FileUploader, Start } from "../../components";
-import { Status } from "../../constants/Status";
 import PdfPreview from "../../components/PdfPreview";
+import { Status } from "../../constants/Status";
 
 export default function Merge() {
   const [files, setFiles] = useState<FileObject[]>([]);
@@ -29,7 +31,28 @@ export default function Merge() {
     setStatus(Status.Editing);
   };
 
-  const handleRemove = (id: string) => {
+  const handleAddFilesClick = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.multiple = true;
+    input.accept = ".pdf";
+
+    input.addEventListener("change", (e) => {
+      const rawFiles = (e.target as HTMLInputElement)?.files;
+      if (rawFiles) {
+        const files = Array.from(rawFiles).map((file) => ({
+          id: file.lastModified.toString(),
+          name: file.name,
+          object: URL.createObjectURL(file),
+        }));
+        setFiles((prevFiles) => [...prevFiles, ...files]);
+      }
+    });
+
+    input.click();
+  };
+
+  const handleRemoveFileClick = (id: string) => {
     const newFiles = files.filter((file) => file.id !== id);
     setFiles(newFiles);
   };
@@ -62,6 +85,10 @@ export default function Merge() {
     }
   };
 
+  const handleDragUpdate = (update: any) => {
+    console.log("update", update);
+  };
+
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) {
       return;
@@ -89,12 +116,15 @@ export default function Merge() {
 
       {status === Status.Editing && (
         <>
-          <DragDropContext onDragEnd={handleDragEnd}>
+          <DragDropContext
+            onDragUpdate={handleDragUpdate}
+            onDragEnd={handleDragEnd}
+          >
             <Droppable droppableId="droppable" direction="horizontal">
               {(provided) => (
                 <div
                   ref={provided.innerRef}
-                  className="flex flex-wrap gap-4"
+                  className="flex flex-wrap gap-4 p-10"
                   {...provided.droppableProps}
                 >
                   {files.map((item, index) => (
@@ -108,24 +138,63 @@ export default function Merge() {
                           ref={provided.innerRef}
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
+                          className={clsx("hover:bg-indigo-200")}
                           style={{
+                            position: "relative",
                             userSelect: "none",
                             ...provided.draggableProps.style,
                           }}
                         >
-                          <button onClick={() => handleRemove(item.id)}>
-                            Remove
-                          </button>
-                          <PdfPreview file={item.object} />
-                          {item.name}
+                          <a
+                            onClick={() => handleRemoveFileClick(item.id)}
+                            className={clsx(
+                              "absolute",
+                              "top-1",
+                              "right-1",
+                              "rounded-full",
+                              "z-50",
+                              "bg-gray-100",
+                              "text-gray-800",
+                              "hover:cursor-pointer",
+                              "hover:text-red-500",
+                              "hover:bg-red-100"
+                            )}
+                          >
+                            <HiOutlineTrash />
+                          </a>
+                          <PdfPreview file={item.object} name={item.name} />
                         </div>
                       )}
                     </Draggable>
                   ))}
+
                   {provided.placeholder}
                 </div>
               )}
             </Droppable>
+            <a
+              onClick={handleAddFilesClick}
+              className={clsx(
+                "flex",
+                "flex-col",
+                "justify-center",
+                "items-center",
+                "gap-2",
+                "w-40",
+                "border",
+                "border-dashed",
+                "border-indigo-700",
+                "rounded-md",
+                "text-indigo-700",
+                "text-sm",
+                "font-light",
+                "hover:cursor-pointer",
+                "hover:bg-indigo-200"
+              )}
+            >
+              <HiOutlinePlusCircle size={24} />
+              <div>Add more files</div>
+            </a>
           </DragDropContext>
           <Start onClick={handleMergeClick} />
         </>
