@@ -12,4 +12,5 @@ export default {
     extend: {},
   },
   plugins: [plugin],
+  important: true,
 };

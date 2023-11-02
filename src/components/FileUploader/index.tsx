@@ -1,8 +1,14 @@
+type FileObject = {
+  id: string;
+  name: string;
+  object: string;
+};
+
 interface FileUploaderProps {
   title: string;
   detail: string;
   isMultiple?: boolean;
-  onFilesSelected?: (urls: string[]) => void;
+  onFilesSelected?: (files: FileObject[]) => void;
 }
 
 export default function FileUploader({
@@ -12,10 +18,14 @@ export default function FileUploader({
   onFilesSelected,
 }: FileUploaderProps) {
   const handleInputFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      const urls = Array.from(files).map((file) => URL.createObjectURL(file));
-      onFilesSelected && onFilesSelected(urls);
+    const rawFiles = e.target.files;
+    if (rawFiles) {
+      const files = Array.from(rawFiles).map((file) => ({
+        id: file.lastModified.toString(),
+        name: file.name,
+        object: URL.createObjectURL(file),
+      }));
+      onFilesSelected && onFilesSelected(files);
     }
   };
 

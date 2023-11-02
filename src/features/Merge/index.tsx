@@ -1,29 +1,47 @@
+import {
+  DragDropContext,
+  Draggable,
+  DropResult,
+  Droppable,
+} from "@hello-pangea/dnd";
 import { PDFDocument } from "pdf-lib";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { FileUploader, Start } from "../../components";
 import { Status } from "../../constants/Status";
+import PdfPreview from "../../components/PdfPreview";
 
 export default function Merge() {
-  const [urls, setUrls] = useState<string[]>([]);
-  const [url, setUrl] = useState<string>("");
+  const [files, setFiles] = useState<FileObject[]>([]);
+  const [downloadUrl, setDownloadUrl] = useState<string>("");
   const [status, setStatus] = useState<Status>(Status.FileSelection);
 
-  const handleFilesSelected = (selectedUrls: string[]) => {
-    if (selectedUrls.length === 0) return;
+  type FileObject = {
+    id: string;
+    name: string;
+    object: string;
+  };
 
-    setUrls(selectedUrls);
-    setStatus(Status.Processing);
+  const handleFilesSelected = (selectedFiles: FileObject[]) => {
+    if (selectedFiles.length === 0) return;
+
+    setFiles(selectedFiles);
+    setStatus(Status.Editing);
+  };
+
+  const handleRemove = (id: string) => {
+    const newFiles = files.filter((file) => file.id !== id);
+    setFiles(newFiles);
   };
 
   const handleMergeClick = async () => {
-    if (urls.length === 0) return;
+    if (files.length === 0) return;
 
     try {
       const pdfDoc = await PDFDocument.create();
 
-      for (const url of urls) {
-        const sourcePdfBytes = await fetch(url).then((res) =>
+      for (const file of files) {
+        const sourcePdfBytes = await fetch(file.object).then((res) =>
           res.arrayBuffer()
         );
         const sourcePdfDoc = await PDFDocument.load(sourcePdfBytes);
@@ -37,11 +55,23 @@ export default function Merge() {
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([pdfBytes], { type: "application/pdf" });
 
-      setUrl(URL.createObjectURL(blob));
+      setDownloadUrl(URL.createObjectURL(blob));
       setStatus(Status.Completed);
     } catch (error) {
       console.log(error);
     }
+  };
+
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) {
+      return;
+    }
+
+    const newFiles = Array.from(files);
+    const [removed] = newFiles.splice(result.source.index, 1);
+    newFiles.splice(result.destination.index, 0, removed);
+
+    setFiles(newFiles);
   };
 
   return (
@@ -57,10 +87,52 @@ export default function Merge() {
         </div>
       )}
 
-      {status === Status.Processing && <Start onClick={handleMergeClick} />}
+      {status === Status.Editing && (
+        <>
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="droppable" direction="horizontal">
+              {(provided) => (
+                <div
+                  ref={provided.innerRef}
+                  className="flex flex-wrap gap-4"
+                  {...provided.droppableProps}
+                >
+                  {files.map((item, index) => (
+                    <Draggable
+                      key={item.id}
+                      draggableId={item.id}
+                      index={index}
+                    >
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          style={{
+                            userSelect: "none",
+                            ...provided.draggableProps.style,
+                          }}
+                        >
+                          <button onClick={() => handleRemove(item.id)}>
+                            Remove
+                          </button>
+                          <PdfPreview file={item.object} />
+                          {item.name}
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+          <Start onClick={handleMergeClick} />
+        </>
+      )}
 
       {status === Status.Completed && (
-        <Link to={url} target="_blank" download>
+        <Link to={downloadUrl} target="_blank" download>
           Download
         </Link>
       )}
