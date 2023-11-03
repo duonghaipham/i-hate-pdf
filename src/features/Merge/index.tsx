@@ -11,18 +11,13 @@ import { HiOutlinePlusCircle, HiOutlineTrash } from "react-icons/hi2";
 import { Link } from "react-router-dom";
 import { FileUploader, Start } from "../../components";
 import PdfPreview from "../../components/PdfPreview";
-import { Status } from "../../constants/Status";
+import { Status } from "../../ts/enums/Status";
+import { FileObject } from "../../ts/interfaces/FileObject";
 
 export default function Merge() {
   const [files, setFiles] = useState<FileObject[]>([]);
   const [downloadUrl, setDownloadUrl] = useState<string>("");
   const [status, setStatus] = useState<Status>(Status.FileSelection);
-
-  type FileObject = {
-    id: string;
-    name: string;
-    object: string;
-  };
 
   const handleFilesSelected = (selectedFiles: FileObject[]) => {
     if (selectedFiles.length === 0) return;
@@ -85,10 +80,6 @@ export default function Merge() {
     }
   };
 
-  const handleDragUpdate = (update: any) => {
-    console.log("update", update);
-  };
-
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) {
       return;
@@ -116,10 +107,7 @@ export default function Merge() {
 
       {status === Status.Editing && (
         <>
-          <DragDropContext
-            onDragUpdate={handleDragUpdate}
-            onDragEnd={handleDragEnd}
-          >
+          <DragDropContext onDragEnd={handleDragEnd}>
             <Droppable droppableId="droppable" direction="horizontal">
               {(provided) => (
                 <div

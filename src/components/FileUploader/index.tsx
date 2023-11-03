@@ -1,8 +1,4 @@
-type FileObject = {
-  id: string;
-  name: string;
-  object: string;
-};
+import { FileObject } from "../../ts/interfaces/FileObject";
 
 interface FileUploaderProps {
   title: string;
